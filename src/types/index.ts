@@ -34,11 +34,13 @@ export interface Product {
 export interface Category {
   id: string;
   name: string;
+  slug?: string;
   image: string;
   parent: string | null;
   products: number;
   status: 'Active' | 'Hidden';
   description: string;
+  tagline?: string;
 }
 
 export type OrderStatus =
