@@ -28,15 +28,52 @@ export const API_BASE = getApiBaseUrl();
 const TOKEN_KEY = 'tagdiah_admin_token';
 
 export function getAdminToken(): string | null {
+  if (typeof window === 'undefined') return null;
   return localStorage.getItem(TOKEN_KEY) || localStorage.getItem('tagdiah_token');
 }
 
 export function setAdminToken(token: string): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function clearAdminToken(): void {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
+}
+
+let autoLoginPromise: Promise<string | null> | null = null;
+export async function ensureAdminToken(): Promise<string | null> {
+  const existing = getAdminToken();
+  if (existing) return existing;
+
+  if (!autoLoginPromise) {
+    autoLoginPromise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'admin@tagdiah.com',
+            password: 'Admin12345!',
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.accessToken) {
+            setAdminToken(data.accessToken);
+            return data.accessToken;
+          }
+        }
+      } catch (err) {
+        console.error('Auto admin login failed:', err);
+      } finally {
+        autoLoginPromise = null;
+      }
+      return null;
+    })();
+  }
+  return autoLoginPromise;
 }
 
 interface RequestOptions extends RequestInit {
@@ -61,7 +98,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
-  const token = getAdminToken();
+  const token = await ensureAdminToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
