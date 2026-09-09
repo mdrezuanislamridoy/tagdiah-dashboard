@@ -79,8 +79,8 @@ export function Categories() {
     setEditing(c);
     setDraft({
       name: c.name,
-      tagline: (c as any).tagline || '',
-      slug: (c as any).slug || '',
+      tagline: c.tagline || '',
+      slug: c.slug || '',
       parent: c.parent ?? 'None (top level)',
       status: c.status,
       description: c.description,
